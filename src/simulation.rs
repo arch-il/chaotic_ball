@@ -30,7 +30,7 @@ impl Simulation {
     }
 
     pub fn update(&mut self, dt: f32) {
-        const STEP_SIZE: f32 = 0.001;
+        const STEP_SIZE: f32 = 0.000001;
         for _ in 0..(dt / STEP_SIZE) as usize {
             self.tick(STEP_SIZE);
         }
@@ -38,13 +38,13 @@ impl Simulation {
 
     pub fn tick(&mut self, dt: f32) {
         const G: f32 = 980.0;
-        let screen_size = Vec2::new(500.0, 500.0);
+        let center = Vec2::new(250.0, 250.0);
 
         for ball in self.balls.iter_mut() {
             ball.vel.y += G * dt;
             ball.pos += ball.vel * dt;
 
-            let relatative_pos = screen_size / 2.0 - ball.pos;
+            let relatative_pos = center - ball.pos;
             if relatative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
                 // ! possible energy leak here
                 // let central_angle = f32::atan2(relatative_pos.y, relatative_pos.x);

@@ -30,14 +30,14 @@ impl Database {
             .balls
             .iter()
             .map(|ball| ball.vel)
-            .fold(0.0, |acc, v| acc + (v.length() as f32 / 100.0).powi(2))
+            .fold(0.0, |acc, v| acc + (v.length() / 100.0).powi(2))
             / 2.0;
 
         self.potential_energy[self.index] = simulation
             .balls
             .iter()
             .map(|ball| ball.pos)
-            .fold(0.0, |acc, c| acc + (450.0 - c.y as f32) / 100.0 * 9.8);
+            .fold(0.0, |acc, c| acc + (450.0 - c.y) / 100.0 * 9.8);
 
         self.mechanical_energy[self.index] =
             self.kinetic_energy[self.index] + self.potential_energy[self.index];
@@ -63,6 +63,9 @@ impl Database {
     }
 
     fn draw_energies(&self) {
+        let scale: f32 =
+            75.0 / self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }];
+
         let mut energies = self
             .kinetic_energy
             .iter()
@@ -71,34 +74,34 @@ impl Database {
             .rev()
             .enumerate()
             .peekable();
+
         while let Some((curr_i, ((&curr_k, &curr_p), &curr_m))) = energies.next() {
             if let Some((next_i, ((next_k, next_p), next_m))) = energies.peek() {
                 if *next_i == 500 - self.index || curr_i == 500 - self.index {
                     continue;
                 }
 
-                const SCALE: f32 = 3.0;
                 draw_line(
                     window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_k * SCALE,
+                    window::screen_height() - curr_k * scale,
                     window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_k * SCALE,
+                    window::screen_height() - **next_k * scale,
                     1.0,
                     color::RED,
                 );
                 draw_line(
                     window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_p * SCALE,
+                    window::screen_height() - curr_p * scale,
                     window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_p * SCALE,
+                    window::screen_height() - **next_p * scale,
                     1.0,
                     color::BLUE,
                 );
                 draw_line(
                     window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_m * SCALE,
+                    window::screen_height() - curr_m * scale,
                     window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_m * SCALE,
+                    window::screen_height() - **next_m * scale,
                     1.0,
                     color::PURPLE,
                 );
