@@ -47,7 +47,6 @@ impl Simulation {
             let relatative_pos = center - ball.pos;
             if relatative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
                 // ! possible energy leak here
-                // let central_angle = f32::atan2(relatative_pos.y, relatative_pos.x);
                 let reflection_angle = ball.vel.angle_between(relatative_pos);
                 let incidence_angle =
                     f32::atan2(ball.vel.y, ball.vel.x) + 2.0 * reflection_angle + PI;

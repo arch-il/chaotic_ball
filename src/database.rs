@@ -1,6 +1,12 @@
 use core::f32;
 
-use macroquad::{color, shapes::draw_line, text::draw_text, window};
+use macroquad::{
+    color,
+    input::{self, KeyCode},
+    shapes::draw_line,
+    text::draw_text,
+    window,
+};
 
 use crate::simulation::Simulation;
 
@@ -9,6 +15,7 @@ pub struct Database {
     pub potential_energy: [f32; 500],
     pub mechanical_energy: [f32; 500],
     index: usize,
+    energy_enabed: bool,
 }
 
 impl Database {
@@ -18,11 +25,16 @@ impl Database {
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
             index: 0,
+            energy_enabed: true,
         }
     }
 
     pub fn update(&mut self, simulation: &Simulation) {
         self.update_energies(simulation);
+
+        if input::is_key_pressed(KeyCode::E) {
+            self.energy_enabed = !self.energy_enabed;
+        }
     }
 
     fn update_energies(&mut self, simulation: &Simulation) {
@@ -59,7 +71,9 @@ impl Database {
             20.0,
             color::LIGHTGRAY,
         );
-        self.draw_energies();
+        if self.energy_enabed {
+            self.draw_energies();
+        }
     }
 
     fn draw_energies(&self) {
