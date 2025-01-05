@@ -1,5 +1,7 @@
+mod database;
 mod simulation;
 
+use database::Database;
 use macroquad::{color, time, window};
 use simulation::Simulation;
 
@@ -8,7 +10,7 @@ fn window_conf() -> window::Conf {
         window_title: "Chaotic Ball".to_owned(),
         window_resizable: false,
         window_width: 500,
-        window_height: 500,
+        window_height: 550,
         high_dpi: false,
         ..Default::default()
     }
@@ -17,12 +19,16 @@ fn window_conf() -> window::Conf {
 #[macroquad::main(window_conf)]
 async fn main() {
     let mut simulation = Simulation::new();
+    let mut database = Database::new();
 
     loop {
         window::clear_background(color::BLACK);
 
         simulation.draw();
+        database.draw();
+
         simulation.update(time::get_frame_time());
+        database.update(&simulation);
 
         window::next_frame().await
     }
