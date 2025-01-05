@@ -1,8 +1,7 @@
-use macroquad::{
-    color,
-    shapes::draw_circle_lines,
-    window::{self, screen_height, screen_width},
-};
+mod simulation;
+
+use macroquad::{color, window};
+use simulation::Simulation;
 
 fn window_conf() -> window::Conf {
     window::Conf {
@@ -17,16 +16,12 @@ fn window_conf() -> window::Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
+    let simulation = Simulation::new();
+
     loop {
         window::clear_background(color::BLACK);
 
-        draw_circle_lines(
-            screen_width() / 2.0,
-            screen_height() / 2.0,
-            screen_width() * 0.8 / 2.0,
-            3.0,
-            color::WHITE,
-        );
+        simulation.draw();
 
         window::next_frame().await
     }
