@@ -1,6 +1,6 @@
 mod simulation;
 
-use macroquad::{color, window};
+use macroquad::{color, time, window};
 use simulation::Simulation;
 
 fn window_conf() -> window::Conf {
@@ -16,12 +16,13 @@ fn window_conf() -> window::Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let simulation = Simulation::new();
+    let mut simulation = Simulation::new();
 
     loop {
         window::clear_background(color::BLACK);
 
         simulation.draw();
+        simulation.update(time::get_frame_time());
 
         window::next_frame().await
     }
