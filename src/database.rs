@@ -11,10 +11,11 @@ use macroquad::{
 use crate::simulation::Simulation;
 
 pub struct Database {
-    pub kinetic_energy: [f32; 500],
-    pub potential_energy: [f32; 500],
-    pub mechanical_energy: [f32; 500],
+    kinetic_energy: [f32; 500],
+    potential_energy: [f32; 500],
+    mechanical_energy: [f32; 500],
     index: usize,
+    ball_counter: usize,
     energy_enabed: bool,
 }
 
@@ -25,12 +26,15 @@ impl Database {
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
             index: 0,
+            ball_counter: 0,
             energy_enabed: true,
         }
     }
 
     pub fn update(&mut self, simulation: &Simulation) {
         self.update_energies(simulation);
+
+        self.ball_counter = simulation.balls.len();
 
         if input::is_key_pressed(KeyCode::E) {
             self.energy_enabed = !self.energy_enabed;
@@ -63,14 +67,16 @@ impl Database {
     pub fn draw(&self) {
         draw_text(
             &format!(
-                "energy: {}",
-                self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }]
+                "balls: {}; energy: {}",
+                self.ball_counter,
+                self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }],
             ),
             5.0,
             12.0,
             20.0,
             color::LIGHTGRAY,
         );
+
         if self.energy_enabed {
             self.draw_energies();
         }
