@@ -1,7 +1,7 @@
 use core::f32;
 
 use macroquad::{
-    color,
+    color::{self, Color},
     input::{self, KeyCode},
     math::Vec2,
     shapes::draw_line,
@@ -22,6 +22,7 @@ pub struct Database {
     potential_energy: [f32; 500],
     mechanical_energy: [f32; 500],
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
+    ball_colors: Vec<Color>,
     ball_counter: usize,
     index: usize,
 
@@ -37,6 +38,7 @@ impl Database {
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
             ball_trails: Vec::new(),
+            ball_colors: Vec::new(),
             ball_counter: 0,
             index: 0,
 
@@ -80,6 +82,8 @@ impl Database {
         if simulation.balls.len() > self.ball_trails.len() {
             self.ball_trails
                 .push(StaticRb::<Vec2, TRAIL_SIZE>::default());
+            self.ball_colors
+                .push(simulation.balls.last().unwrap().color);
         }
 
         for (trail, ball) in self.ball_trails.iter_mut().zip(simulation.balls.iter()) {
@@ -113,20 +117,6 @@ impl Database {
         if self.info_enabled {
             self.draw_info();
         }
-    }
-
-    fn draw_info(&self) {
-        draw_text(
-            &format!(
-                "balls: {}; energy: {}",
-                self.ball_counter,
-                self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }],
-            ),
-            5.0,
-            12.0,
-            20.0,
-            color::LIGHTGRAY,
-        );
     }
 
     fn draw_energies(&self) {
@@ -177,16 +167,30 @@ impl Database {
     }
 
     fn draw_trails(&self) {
-        for trail in self.ball_trails.iter() {
+        for (ball_id, trail) in self.ball_trails.iter().enumerate() {
             let count = trail.iter().count();
             let mut iter = trail.iter().enumerate().peekable();
             while let Some((i, curr)) = iter.next() {
                 if let Some((_, next)) = iter.peek() {
-                    let mut color = color::LIME;
+                    let mut color = self.ball_colors[ball_id];
                     color.a = i as f32 / count as f32;
                     draw_line(curr.x, curr.y, next.x, next.y, 1.0, color);
                 }
             }
         }
+    }
+
+    fn draw_info(&self) {
+        draw_text(
+            &format!(
+                "balls: {}; energy: {}",
+                self.ball_counter,
+                self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }],
+            ),
+            5.0,
+            12.0,
+            20.0,
+            color::LIGHTGRAY,
+        );
     }
 }
