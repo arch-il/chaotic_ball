@@ -3,18 +3,29 @@ use core::f32;
 use macroquad::{
     color,
     input::{self, KeyCode},
+    math::Vec2,
     shapes::draw_line,
     text::draw_text,
     window,
 };
+use ringbuf::{
+    traits::{Consumer, Observer, Producer, SplitRef},
+    StaticRb,
+};
 
 use crate::simulation::Simulation;
+
+const TRAIL_SIZE: usize = 250;
 
 pub struct Database {
     kinetic_energy: [f32; 500],
     potential_energy: [f32; 500],
     mechanical_energy: [f32; 500],
+
+    ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
+
     index: usize,
+
     ball_counter: usize,
     energy_enabed: bool,
 }
@@ -25,7 +36,11 @@ impl Database {
             kinetic_energy: [0.0; 500],
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
+
+            ball_trails: Vec::new(),
+
             index: 0,
+
             ball_counter: 0,
             energy_enabed: true,
         }
@@ -33,6 +48,7 @@ impl Database {
 
     pub fn update(&mut self, simulation: &Simulation) {
         self.update_energies(simulation);
+        self.update_ball_trails(simulation);
 
         self.ball_counter = simulation.balls.len();
 
@@ -64,6 +80,21 @@ impl Database {
         }
     }
 
+    fn update_ball_trails(&mut self, simulation: &Simulation) {
+        if simulation.balls.len() > self.ball_trails.len() {
+            self.ball_trails
+                .push(StaticRb::<Vec2, TRAIL_SIZE>::default());
+        }
+
+        for (trail, ball) in self.ball_trails.iter_mut().zip(simulation.balls.iter()) {
+            let (mut prod, mut cons) = trail.split_ref();
+            if cons.is_full() {
+                cons.try_pop();
+            }
+            let _ = prod.try_push(ball.pos);
+        }
+    }
+
     pub fn draw(&self) {
         draw_text(
             &format!(
@@ -80,6 +111,8 @@ impl Database {
         if self.energy_enabed {
             self.draw_energies();
         }
+
+        self.draw_trails();
     }
 
     fn draw_energies(&self) {
@@ -125,6 +158,20 @@ impl Database {
                     1.0,
                     color::PURPLE,
                 );
+            }
+        }
+    }
+
+    fn draw_trails(&self) {
+        for trail in self.ball_trails.iter() {
+            let count = trail.iter().count();
+            let mut iter = trail.iter().enumerate().peekable();
+            while let Some((i, curr)) = iter.next() {
+                if let Some((_, next)) = iter.peek() {
+                    let mut color = color::LIME;
+                    color.a = i as f32 / count as f32;
+                    draw_line(curr.x, curr.y, next.x, next.y, 1.0, color);
+                }
             }
         }
     }
