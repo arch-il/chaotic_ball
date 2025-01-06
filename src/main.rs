@@ -2,7 +2,7 @@ mod database;
 mod simulation;
 
 use database::Database;
-use macroquad::{color, time, window};
+use macroquad::{color, input, time, window};
 use simulation::Simulation;
 
 fn window_conf() -> window::Conf {
@@ -32,6 +32,10 @@ async fn main() {
 
         simulation.update(time::get_frame_time());
         database.update(&simulation);
+
+        if input::is_key_down(input::KeyCode::Escape) {
+            break;
+        }
 
         window::next_frame().await
     }

@@ -15,7 +15,7 @@ use ringbuf::{
 
 use crate::simulation::Simulation;
 
-const TRAIL_SIZE: usize = 250;
+const TRAIL_SIZE: usize = 50;
 
 pub struct Database {
     kinetic_energy: [f32; 500],
