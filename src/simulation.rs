@@ -70,10 +70,14 @@ impl Simulation {
             ball.vel.y += G * dt;
             ball.pos += ball.vel * dt;
 
-            let relatative_pos = center - ball.pos;
-            if relatative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
+            let relative_pos = center - ball.pos;
+            if relative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
                 // ! possible energy leak here
-                let reflection_angle = ball.vel.angle_between(relatative_pos);
+                // get ball inside
+                let relative_pos = relative_pos.normalize() * (self.outer_radius - self.radius);
+                ball.pos = center - relative_pos;
+                // reflect velocity
+                let reflection_angle = ball.vel.angle_between(relative_pos);
                 let incidence_angle =
                     f32::atan2(ball.vel.y, ball.vel.x) + 2.0 * reflection_angle + PI;
                 ball.vel = Vec2::from_angle(incidence_angle) * ball.vel.length();
