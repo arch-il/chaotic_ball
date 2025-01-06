@@ -21,13 +21,13 @@ pub struct Database {
     kinetic_energy: [f32; 500],
     potential_energy: [f32; 500],
     mechanical_energy: [f32; 500],
-
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
-
+    ball_counter: usize,
     index: usize,
 
-    ball_counter: usize,
     energy_enabed: bool,
+    trial_enabled: bool,
+    info_enabled: bool,
 }
 
 impl Database {
@@ -36,13 +36,13 @@ impl Database {
             kinetic_energy: [0.0; 500],
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
-
             ball_trails: Vec::new(),
-
+            ball_counter: 0,
             index: 0,
 
-            ball_counter: 0,
             energy_enabed: true,
+            trial_enabled: true,
+            info_enabled: true,
         }
     }
 
@@ -51,10 +51,6 @@ impl Database {
         self.update_ball_trails(simulation);
 
         self.ball_counter = simulation.balls.len();
-
-        if input::is_key_pressed(KeyCode::E) {
-            self.energy_enabed = !self.energy_enabed;
-        }
     }
 
     fn update_energies(&mut self, simulation: &Simulation) {
@@ -95,7 +91,31 @@ impl Database {
         }
     }
 
+    pub fn input(&mut self) {
+        if input::is_key_pressed(KeyCode::E) {
+            self.energy_enabed = !self.energy_enabed;
+        }
+        if input::is_key_pressed(KeyCode::T) {
+            self.trial_enabled = !self.trial_enabled;
+        }
+        if input::is_key_pressed(KeyCode::I) {
+            self.info_enabled = !self.info_enabled;
+        }
+    }
+
     pub fn draw(&self) {
+        if self.energy_enabed {
+            self.draw_energies();
+        }
+        if self.trial_enabled {
+            self.draw_trails();
+        }
+        if self.info_enabled {
+            self.draw_info();
+        }
+    }
+
+    fn draw_info(&self) {
         draw_text(
             &format!(
                 "balls: {}; energy: {}",
@@ -107,12 +127,6 @@ impl Database {
             20.0,
             color::LIGHTGRAY,
         );
-
-        if self.energy_enabed {
-            self.draw_energies();
-        }
-
-        self.draw_trails();
     }
 
     fn draw_energies(&self) {

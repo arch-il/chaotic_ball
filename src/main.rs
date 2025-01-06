@@ -28,6 +28,7 @@ async fn main() {
         database.draw();
 
         simulation.input();
+        database.input();
 
         simulation.update(time::get_frame_time());
         database.update(&simulation);
