@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 
 use macroquad::{
-    color,
+    color, input,
     math::Vec2,
     shapes::{draw_circle, draw_circle_lines},
 };
@@ -20,10 +20,7 @@ pub struct Ball {
 impl Simulation {
     pub fn new() -> Self {
         Self {
-            balls: vec![Ball {
-                pos: Vec2::new(300.0, 250.0),
-                vel: Vec2::ZERO,
-            }],
+            balls: Vec::new(),
             radius: 10.0,
             outer_radius: 200.0,
         }
@@ -33,6 +30,21 @@ impl Simulation {
         const STEP_SIZE: f32 = 0.000001;
         for _ in 0..(dt / STEP_SIZE) as usize {
             self.tick(STEP_SIZE);
+        }
+    }
+
+    pub fn input(&mut self) {
+        if input::is_mouse_button_pressed(input::MouseButton::Left) {
+            let mouse_pos = input::mouse_position();
+            let mouse_pos = Vec2::new(mouse_pos.0, mouse_pos.1);
+            if (Vec2::new(250.0, 250.0) - mouse_pos).length_squared()
+                <= (self.outer_radius - self.radius).powi(2)
+            {
+                self.balls.push(Ball {
+                    pos: mouse_pos,
+                    vel: Vec2::ZERO,
+                });
+            }
         }
     }
 
