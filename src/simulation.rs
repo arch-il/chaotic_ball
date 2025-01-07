@@ -11,6 +11,7 @@ pub struct Simulation {
     pub balls: Vec<Ball>,
     pub radius: f32,
     pub outer_radius: f32,
+    pub step_size: f32,
 }
 
 pub struct Ball {
@@ -25,17 +26,18 @@ impl Simulation {
             balls: Vec::new(),
             radius: 10.0,
             outer_radius: 200.0,
+            step_size: 0.000001, // MIN
         }
     }
 
     pub fn update(&mut self, dt: f32) {
-        const STEP_SIZE: f32 = 0.000001;
-        for _ in 0..(dt / STEP_SIZE) as usize {
-            self.tick(STEP_SIZE);
+        for _ in 0..(dt / self.step_size) as usize {
+            self.tick(self.step_size);
         }
     }
 
     pub fn input(&mut self) {
+        // spawn balls
         const COLORS: [Color; 9] = [
             color::LIME,
             color::BEIGE,
@@ -59,6 +61,14 @@ impl Simulation {
                     color: COLORS[self.balls.len() % COLORS.len()],
                 });
             }
+        }
+
+        // change step_size
+        if input::is_key_pressed(input::KeyCode::Left) {
+            self.step_size *= 10.0;
+        }
+        if input::is_key_pressed(input::KeyCode::Right) {
+            self.step_size /= 10.0;
         }
     }
 

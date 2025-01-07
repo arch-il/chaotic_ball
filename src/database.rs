@@ -21,10 +21,12 @@ pub struct Database {
     kinetic_energy: [f32; 500],
     potential_energy: [f32; 500],
     mechanical_energy: [f32; 500],
+    index: usize,
+
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
     ball_colors: Vec<Color>,
     ball_counter: usize,
-    index: usize,
+    step_size: f32,
 
     energy_enabed: bool,
     trial_enabled: bool,
@@ -37,10 +39,12 @@ impl Database {
             kinetic_energy: [0.0; 500],
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
+            index: 0,
+
             ball_trails: Vec::new(),
             ball_colors: Vec::new(),
             ball_counter: 0,
-            index: 0,
+            step_size: 0.0,
 
             energy_enabed: true,
             trial_enabled: true,
@@ -53,6 +57,7 @@ impl Database {
         self.update_ball_trails(simulation);
 
         self.ball_counter = simulation.balls.len();
+        self.step_size = simulation.step_size;
     }
 
     fn update_energies(&mut self, simulation: &Simulation) {
@@ -183,8 +188,9 @@ impl Database {
     fn draw_info(&self) {
         draw_text(
             &format!(
-                "balls: {}; energy: {}",
+                "balls: {}; step_size: {}; energy: {}",
                 self.ball_counter,
+                self.step_size,
                 self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }],
             ),
             5.0,
