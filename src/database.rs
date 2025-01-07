@@ -6,7 +6,7 @@ use macroquad::{
     math::Vec2,
     shapes::draw_line,
     text::draw_text,
-    window,
+    time, window,
 };
 use ringbuf::{
     traits::{Consumer, Observer, Producer, SplitRef},
@@ -21,6 +21,7 @@ pub struct Database {
     kinetic_energy: [f32; 500],
     potential_energy: [f32; 500],
     mechanical_energy: [f32; 500],
+    frame_time: [f32; 500],
     index: usize,
 
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
@@ -29,6 +30,7 @@ pub struct Database {
     step_size: f32,
 
     energy_enabed: bool,
+    frame_time_enabled: bool,
     trial_enabled: bool,
     info_enabled: bool,
 }
@@ -39,6 +41,7 @@ impl Database {
             kinetic_energy: [0.0; 500],
             potential_energy: [0.0; 500],
             mechanical_energy: [0.0; 500],
+            frame_time: [0.0; 500],
             index: 0,
 
             ball_trails: Vec::new(),
@@ -47,20 +50,21 @@ impl Database {
             step_size: 0.0,
 
             energy_enabed: true,
+            frame_time_enabled: false,
             trial_enabled: true,
             info_enabled: true,
         }
     }
 
     pub fn update(&mut self, simulation: &Simulation) {
-        self.update_energies(simulation);
+        self.update_graphs(simulation);
         self.update_ball_trails(simulation);
 
         self.ball_counter = simulation.balls.len();
         self.step_size = simulation.step_size;
     }
 
-    fn update_energies(&mut self, simulation: &Simulation) {
+    fn update_graphs(&mut self, simulation: &Simulation) {
         self.kinetic_energy[self.index] = simulation
             .balls
             .iter()
@@ -76,6 +80,8 @@ impl Database {
 
         self.mechanical_energy[self.index] =
             self.kinetic_energy[self.index] + self.potential_energy[self.index];
+
+        self.frame_time[self.index] = time::get_frame_time();
 
         self.index += 1;
         if self.index >= window::screen_width() as usize {
@@ -104,6 +110,9 @@ impl Database {
         if input::is_key_pressed(KeyCode::E) {
             self.energy_enabed = !self.energy_enabed;
         }
+        if input::is_key_pressed(KeyCode::F) {
+            self.frame_time_enabled = !self.frame_time_enabled;
+        }
         if input::is_key_pressed(KeyCode::T) {
             self.trial_enabled = !self.trial_enabled;
         }
@@ -113,8 +122,8 @@ impl Database {
     }
 
     pub fn draw(&self) {
-        if self.energy_enabed {
-            self.draw_energies();
+        if self.energy_enabed || self.frame_time_enabled {
+            self.draw_graphs();
         }
         if self.trial_enabled {
             self.draw_trails();
@@ -124,48 +133,51 @@ impl Database {
         }
     }
 
-    fn draw_energies(&self) {
-        let scale: f32 =
-            75.0 / self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }];
+    fn draw_graphs(&self) {
+        let index = if self.index == 0 { 499 } else { self.index - 1 };
+        let energy_scale = 75.0 / self.mechanical_energy[index];
+        let frame_iter = self.frame_time.iter().filter(|&&x| x != 0.0);
+        let frame_scale = 40.0 / (frame_iter.clone().sum::<f32>() / frame_iter.count() as f32);
 
-        let mut energies = self
-            .kinetic_energy
-            .iter()
-            .zip(self.potential_energy.iter())
-            .zip(self.mechanical_energy.iter())
-            .rev()
-            .enumerate()
-            .peekable();
+        for i in 0..499 {
+            if i + 1 == self.index {
+                continue;
+            }
 
-        while let Some((curr_i, ((&curr_k, &curr_p), &curr_m))) = energies.next() {
-            if let Some((next_i, ((next_k, next_p), next_m))) = energies.peek() {
-                if *next_i == 500 - self.index || curr_i == 500 - self.index {
-                    continue;
-                }
-
+            if self.energy_enabed {
                 draw_line(
-                    window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_k * scale,
-                    window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_k * scale,
+                    i as f32,
+                    window::screen_height() - self.kinetic_energy[i] * energy_scale,
+                    (i + 1) as f32,
+                    window::screen_height() - self.kinetic_energy[i + 1] * energy_scale,
                     1.0,
                     color::RED,
                 );
                 draw_line(
-                    window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_p * scale,
-                    window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_p * scale,
+                    i as f32,
+                    window::screen_height() - self.potential_energy[i] * energy_scale,
+                    (i + 1) as f32,
+                    window::screen_height() - self.potential_energy[i + 1] * energy_scale,
                     1.0,
                     color::BLUE,
                 );
                 draw_line(
-                    window::screen_width() - curr_i as f32,
-                    window::screen_height() - curr_m * scale,
-                    window::screen_width() - *next_i as f32,
-                    window::screen_height() - **next_m * scale,
+                    i as f32,
+                    window::screen_height() - self.mechanical_energy[i] * energy_scale,
+                    (i + 1) as f32,
+                    window::screen_height() - self.mechanical_energy[i + 1] * energy_scale,
                     1.0,
                     color::PURPLE,
+                );
+            }
+            if self.frame_time_enabled {
+                draw_line(
+                    i as f32,
+                    window::screen_height() - self.frame_time[i] * frame_scale,
+                    (i + 1) as f32,
+                    window::screen_height() - self.frame_time[i + 1] * frame_scale,
+                    1.0,
+                    color::LIGHTGRAY,
                 );
             }
         }
@@ -186,12 +198,13 @@ impl Database {
     }
 
     fn draw_info(&self) {
+        let index = if self.index == 0 { 499 } else { self.index - 1 };
         draw_text(
             &format!(
                 "balls: {}; step_size: {}; energy: {}",
                 self.ball_counter,
                 self.step_size,
-                self.mechanical_energy[if self.index == 0 { 499 } else { self.index - 1 }],
+                self.kinetic_energy[index] + self.potential_energy[index],
             ),
             5.0,
             12.0,
