@@ -24,8 +24,8 @@ async fn main() {
     loop {
         window::clear_background(color::BLACK);
 
-        simulation.draw();
         database.draw();
+        simulation.draw();
 
         simulation.input();
         database.input();

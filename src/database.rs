@@ -136,8 +136,8 @@ impl Database {
     fn draw_graphs(&self) {
         let index = if self.index == 0 { 499 } else { self.index - 1 };
         let energy_scale = 75.0 / self.mechanical_energy[index];
-        let frame_iter = self.frame_time.iter().filter(|&&x| x != 0.0);
-        let frame_scale = 40.0 / (frame_iter.clone().sum::<f32>() / frame_iter.count() as f32);
+        let frame_scale = self.frame_time.iter().filter(|&&x| x != 0.0);
+        let frame_scale = 40.0 / (frame_scale.clone().sum::<f32>() / frame_scale.count() as f32);
 
         for i in 0..499 {
             if i + 1 == self.index {
@@ -170,6 +170,7 @@ impl Database {
                     color::PURPLE,
                 );
             }
+
             if self.frame_time_enabled {
                 draw_line(
                     i as f32,
