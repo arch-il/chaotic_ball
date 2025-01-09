@@ -6,6 +6,7 @@ use macroquad::{
     math::Vec2,
     shapes::{draw_circle, draw_circle_lines},
 };
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 pub struct Simulation {
     pub balls: Vec<Ball>,
@@ -31,9 +32,30 @@ impl Simulation {
     }
 
     pub fn update(&mut self, dt: f32) {
-        for _ in 0..(dt / self.step_size) as usize {
-            self.tick(self.step_size);
-        }
+        const G: f32 = 980.0;
+        let center = Vec2::new(250.0, 250.0);
+
+        self.balls.par_iter_mut().for_each(|ball| {
+            for _ in 0..(dt / self.step_size) as usize {
+                let dt = self.step_size;
+
+                ball.vel.y += G * dt;
+                ball.pos += ball.vel * dt;
+
+                let relative_pos = center - ball.pos;
+                if relative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
+                    // ! possible energy leak here
+                    // get ball inside
+                    let relative_pos = relative_pos.normalize() * (self.outer_radius - self.radius);
+                    ball.pos = center - relative_pos;
+                    // reflect velocity
+                    let reflection_angle = ball.vel.angle_between(relative_pos);
+                    let incidence_angle =
+                        f32::atan2(ball.vel.y, ball.vel.x) + 2.0 * reflection_angle + PI;
+                    ball.vel = Vec2::from_angle(incidence_angle) * ball.vel.length();
+                }
+            }
+        });
     }
 
     pub fn input(&mut self) {
@@ -69,29 +91,6 @@ impl Simulation {
         }
         if input::is_key_pressed(input::KeyCode::Right) {
             self.step_size /= 10.0;
-        }
-    }
-
-    pub fn tick(&mut self, dt: f32) {
-        const G: f32 = 980.0;
-        let center = Vec2::new(250.0, 250.0);
-
-        for ball in self.balls.iter_mut() {
-            ball.vel.y += G * dt;
-            ball.pos += ball.vel * dt;
-
-            let relative_pos = center - ball.pos;
-            if relative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
-                // ! possible energy leak here
-                // get ball inside
-                let relative_pos = relative_pos.normalize() * (self.outer_radius - self.radius);
-                ball.pos = center - relative_pos;
-                // reflect velocity
-                let reflection_angle = ball.vel.angle_between(relative_pos);
-                let incidence_angle =
-                    f32::atan2(ball.vel.y, ball.vel.x) + 2.0 * reflection_angle + PI;
-                ball.vel = Vec2::from_angle(incidence_angle) * ball.vel.length();
-            }
         }
     }
 
