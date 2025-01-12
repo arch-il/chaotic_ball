@@ -46,7 +46,8 @@ impl Simulation {
                 if relative_pos.length_squared() >= (self.outer_radius - self.radius).powi(2) {
                     // ! possible energy leak here
                     // get ball inside
-                    let relative_pos = relative_pos.normalize() * (self.outer_radius - self.radius);
+                    let relative_pos = relative_pos.normalize()
+                        * (2.0 * (self.outer_radius - self.radius) - relative_pos.length());
                     ball.pos = center - relative_pos;
                     // reflect velocity
                     let reflection_angle = ball.vel.angle_between(relative_pos);
