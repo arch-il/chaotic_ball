@@ -9,8 +9,8 @@ fn window_conf() -> window::Conf {
     window::Conf {
         window_title: "Chaotic Ball".to_owned(),
         window_resizable: false,
-        window_width: 500,
-        window_height: 550,
+        window_width: 806,
+        window_height: 500,
         high_dpi: false,
         ..Default::default()
     }

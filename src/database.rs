@@ -4,9 +4,9 @@ use macroquad::{
     color::{self, Color},
     input::{self, KeyCode},
     math::Vec2,
-    shapes::draw_line,
+    shapes::{draw_line, draw_rectangle_lines},
     text::draw_text,
-    time, window,
+    time,
 };
 use ringbuf::{
     traits::{Consumer, Observer, Producer, SplitRef},
@@ -16,12 +16,13 @@ use ringbuf::{
 use crate::simulation::Simulation;
 
 const TRAIL_SIZE: usize = 50;
+const GRAPH_SIZE: usize = 300;
 
 pub struct Database {
-    kinetic_energy: [f32; 500],
-    potential_energy: [f32; 500],
-    mechanical_energy: [f32; 500],
-    frame_time: [f32; 500],
+    kinetic_energy: [f32; GRAPH_SIZE],
+    potential_energy: [f32; GRAPH_SIZE],
+    mechanical_energy: [f32; GRAPH_SIZE],
+    frame_time: [f32; GRAPH_SIZE],
     index: usize,
 
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
@@ -38,10 +39,10 @@ pub struct Database {
 impl Database {
     pub fn new() -> Self {
         Self {
-            kinetic_energy: [0.0; 500],
-            potential_energy: [0.0; 500],
-            mechanical_energy: [0.0; 500],
-            frame_time: [0.0; 500],
+            kinetic_energy: [0.0; GRAPH_SIZE],
+            potential_energy: [0.0; GRAPH_SIZE],
+            mechanical_energy: [0.0; GRAPH_SIZE],
+            frame_time: [0.0; GRAPH_SIZE],
             index: 0,
 
             ball_trails: Vec::new(),
@@ -50,7 +51,7 @@ impl Database {
             step_size: 0.0,
 
             energy_enabed: true,
-            frame_time_enabled: false,
+            frame_time_enabled: true,
             trial_enabled: true,
             info_enabled: true,
         }
@@ -84,7 +85,7 @@ impl Database {
         self.frame_time[self.index] = time::get_frame_time();
 
         self.index += 1;
-        if self.index >= window::screen_width() as usize {
+        if self.index >= GRAPH_SIZE {
             self.index = 0;
         }
     }
@@ -134,38 +135,82 @@ impl Database {
     }
 
     fn draw_graphs(&self) {
-        let index = if self.index == 0 { 499 } else { self.index - 1 };
-        let energy_scale = 75.0 / self.mechanical_energy[index];
-        let frame_scale = self.frame_time.iter().filter(|&&x| x != 0.0);
-        let frame_scale = 40.0 / (frame_scale.clone().sum::<f32>() / frame_scale.count() as f32);
+        const GAP: f32 = 3.0;
 
-        for i in 0..499 {
+        const ENERGY_RECT: (f32, f32, f32, f32) =
+            (500.0 + GAP, 0.0 + GAP, GRAPH_SIZE as f32, 100.0);
+        draw_rectangle_lines(
+            ENERGY_RECT.0,
+            ENERGY_RECT.1,
+            ENERGY_RECT.2,
+            ENERGY_RECT.3,
+            3.0,
+            color::PURPLE,
+        );
+
+        const FRAME_TIME_RECT: (f32, f32, f32, f32) =
+            (500.0 + GAP, 100.0 + 2.0 * GAP, GRAPH_SIZE as f32, 100.0);
+        draw_rectangle_lines(
+            FRAME_TIME_RECT.0,
+            FRAME_TIME_RECT.1,
+            FRAME_TIME_RECT.2,
+            FRAME_TIME_RECT.3,
+            3.0,
+            color::LIGHTGRAY,
+        );
+
+        let index = if self.index == 0 {
+            GRAPH_SIZE - 1
+        } else {
+            self.index - 1
+        };
+        let energy_scale = 75.0 / self.mechanical_energy[index];
+        let frame_scale = 75.0
+            / self
+                .frame_time
+                .iter()
+                .max_by(|a, b| a.partial_cmp(b).unwrap())
+                .unwrap();
+
+        //? Don't know how to get display refresh rate
+        // let fps_line = 1.0 / 165.0 * frame_scale;
+        // let fps_line = FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - fps_line;
+        // draw_line(
+        //     FRAME_TIME_RECT.0,
+        //     fps_line,
+        //     FRAME_TIME_RECT.0 + FRAME_TIME_RECT.2,
+        //     fps_line,
+        //     3.0,
+        //     color::RED,
+        // );
+
+        for i in 0..(GRAPH_SIZE - 1) {
             if i + 1 == self.index {
                 continue;
             }
 
             if self.energy_enabed {
                 draw_line(
-                    i as f32,
-                    window::screen_height() - self.kinetic_energy[i] * energy_scale,
-                    (i + 1) as f32,
-                    window::screen_height() - self.kinetic_energy[i + 1] * energy_scale,
+                    ENERGY_RECT.0 + i as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.kinetic_energy[i] * energy_scale,
+                    ENERGY_RECT.0 + (i + 1) as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.kinetic_energy[i + 1] * energy_scale,
                     1.0,
                     color::RED,
                 );
                 draw_line(
-                    i as f32,
-                    window::screen_height() - self.potential_energy[i] * energy_scale,
-                    (i + 1) as f32,
-                    window::screen_height() - self.potential_energy[i + 1] * energy_scale,
+                    ENERGY_RECT.0 + i as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.potential_energy[i] * energy_scale,
+                    ENERGY_RECT.0 + (i + 1) as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.potential_energy[i + 1] * energy_scale,
                     1.0,
                     color::BLUE,
                 );
                 draw_line(
-                    i as f32,
-                    window::screen_height() - self.mechanical_energy[i] * energy_scale,
-                    (i + 1) as f32,
-                    window::screen_height() - self.mechanical_energy[i + 1] * energy_scale,
+                    ENERGY_RECT.0 + i as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.mechanical_energy[i] * energy_scale,
+                    ENERGY_RECT.0 + (i + 1) as f32,
+                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.mechanical_energy[i + 1] * energy_scale,
                     1.0,
                     color::PURPLE,
                 );
@@ -173,10 +218,10 @@ impl Database {
 
             if self.frame_time_enabled {
                 draw_line(
-                    i as f32,
-                    window::screen_height() - self.frame_time[i] * frame_scale,
-                    (i + 1) as f32,
-                    window::screen_height() - self.frame_time[i + 1] * frame_scale,
+                    FRAME_TIME_RECT.0 + i as f32,
+                    FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - self.frame_time[i] * frame_scale,
+                    FRAME_TIME_RECT.0 + (i + 1) as f32,
+                    FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - self.frame_time[i + 1] * frame_scale,
                     1.0,
                     color::LIGHTGRAY,
                 );
@@ -199,7 +244,11 @@ impl Database {
     }
 
     fn draw_info(&self) {
-        let index = if self.index == 0 { 499 } else { self.index - 1 };
+        let index = if self.index == 0 {
+            GRAPH_SIZE - 1
+        } else {
+            self.index - 1
+        };
         draw_text(
             &format!(
                 "balls: {}; step_size: {}; energy: {}",
