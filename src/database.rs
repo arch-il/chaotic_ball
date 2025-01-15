@@ -141,14 +141,41 @@ impl Database {
     }
 
     fn draw_energy(&self) {
+        let curr_index = if self.index == 0 {
+            GRAPH_SIZE - 1
+        } else {
+            self.index - 1
+        };
+
         const ID: i32 = 0;
+        const TITLE_RECT: (f32, f32, f32, f32) = (
+            500.0 + GAP,
+            125.0 * ID as f32 + GAP * (2 * ID + 1) as f32,
+            GRAPH_SIZE as f32,
+            25.0,
+        );
+        draw_rectangle_lines(
+            TITLE_RECT.0,
+            TITLE_RECT.1,
+            TITLE_RECT.2,
+            TITLE_RECT.3,
+            RECT_THICKNESS,
+            color::PURPLE,
+        );
+        draw_text(
+            &format!("Energy - {}", self.mechanical_energy[curr_index]),
+            TITLE_RECT.0 + GAP,
+            TITLE_RECT.1 + 17.0,
+            23.0,
+            color::LIGHTGRAY,
+        );
+
         const RECT: (f32, f32, f32, f32) = (
             500.0 + GAP,
-            100.0 * ID as f32 + GAP * (ID + 1) as f32,
+            125.0 * ID as f32 + GAP * (2 * ID + 2) as f32 + 25.0,
             GRAPH_SIZE as f32,
             100.0,
         );
-
         draw_rectangle_lines(
             RECT.0,
             RECT.1,
@@ -158,11 +185,6 @@ impl Database {
             color::PURPLE,
         );
 
-        let curr_index = if self.index == 0 {
-            GRAPH_SIZE - 1
-        } else {
-            self.index - 1
-        };
         let energy_scale = 75.0 / self.mechanical_energy[curr_index];
 
         for i in 0..(GRAPH_SIZE - 1) {
@@ -199,13 +221,37 @@ impl Database {
 
     fn draw_frame_time(&self) {
         const ID: i32 = 1;
+        const TITLE_RECT: (f32, f32, f32, f32) = (
+            500.0 + GAP,
+            125.0 * ID as f32 + GAP * (2 * ID + 1) as f32,
+            GRAPH_SIZE as f32,
+            25.0,
+        );
+        draw_rectangle_lines(
+            TITLE_RECT.0,
+            TITLE_RECT.1,
+            TITLE_RECT.2,
+            TITLE_RECT.3,
+            RECT_THICKNESS,
+            color::LIGHTGRAY,
+        );
+        draw_text(
+            &format!(
+                "Frame Time - {}",
+                self.frame_time.iter().sum::<f32>() / GRAPH_SIZE as f32
+            ),
+            TITLE_RECT.0 + GAP,
+            TITLE_RECT.1 + 17.0,
+            23.0,
+            color::LIGHTGRAY,
+        );
+
         const RECT: (f32, f32, f32, f32) = (
             500.0 + GAP,
-            100.0 * ID as f32 + GAP * (ID + 1) as f32,
+            125.0 * ID as f32 + GAP * (2 * ID + 2) as f32 + 25.0,
             GRAPH_SIZE as f32,
             100.0,
         );
-
         draw_rectangle_lines(
             RECT.0,
             RECT.1,
