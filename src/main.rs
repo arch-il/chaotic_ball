@@ -1,6 +1,8 @@
 mod database;
 mod simulation;
 
+use std::time::Instant;
+
 use database::Database;
 use macroquad::{color, input, time, window};
 use simulation::Simulation;
@@ -30,8 +32,11 @@ async fn main() {
         simulation.input();
         database.input();
 
+        let start = Instant::now();
         simulation.update(time::get_frame_time());
-        database.update(&simulation);
+        let simulation_time = (Instant::now() - start).as_secs_f32();
+
+        database.update(&simulation, simulation_time);
 
         if input::is_key_down(input::KeyCode::Escape) {
             break;

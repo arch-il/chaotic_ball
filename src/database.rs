@@ -26,6 +26,7 @@ pub struct Database {
     potential_energy: [f32; GRAPH_SIZE],
     mechanical_energy: [f32; GRAPH_SIZE],
     frame_time: [f32; GRAPH_SIZE],
+    simulation_time: [f32; GRAPH_SIZE],
     index: usize,
 
     ball_trails: Vec<StaticRb<Vec2, TRAIL_SIZE>>,
@@ -46,6 +47,7 @@ impl Database {
             potential_energy: [0.0; GRAPH_SIZE],
             mechanical_energy: [0.0; GRAPH_SIZE],
             frame_time: [0.0; GRAPH_SIZE],
+            simulation_time: [0.0; GRAPH_SIZE],
             index: 0,
 
             ball_trails: Vec::new(),
@@ -60,15 +62,15 @@ impl Database {
         }
     }
 
-    pub fn update(&mut self, simulation: &Simulation) {
-        self.update_graphs(simulation);
+    pub fn update(&mut self, simulation: &Simulation, simulation_time: f32) {
+        self.update_graphs(simulation, simulation_time);
         self.update_ball_trails(simulation);
 
         self.ball_counter = simulation.balls.len();
         self.step_size = simulation.step_size;
     }
 
-    fn update_graphs(&mut self, simulation: &Simulation) {
+    fn update_graphs(&mut self, simulation: &Simulation, simulation_time: f32) {
         self.kinetic_energy[self.index] = simulation
             .balls
             .iter()
@@ -86,6 +88,8 @@ impl Database {
             self.kinetic_energy[self.index] + self.potential_energy[self.index];
 
         self.frame_time[self.index] = time::get_frame_time();
+
+        self.simulation_time[self.index] = simulation_time;
 
         self.index += 1;
         if self.index >= GRAPH_SIZE {
@@ -233,7 +237,7 @@ impl Database {
             TITLE_RECT.2,
             TITLE_RECT.3,
             RECT_THICKNESS,
-            color::LIGHTGRAY,
+            color::YELLOW,
         );
         draw_text(
             &format!(
@@ -258,7 +262,7 @@ impl Database {
             RECT.2,
             RECT.3,
             RECT_THICKNESS,
-            color::LIGHTGRAY,
+            color::YELLOW,
         );
 
         let frame_scale = 75.0
@@ -279,7 +283,16 @@ impl Database {
                 RECT.0 + (i + 1) as f32,
                 RECT.1 + RECT.3 - self.frame_time[i + 1] * frame_scale,
                 1.0,
-                color::LIGHTGRAY,
+                color::YELLOW,
+            );
+
+            draw_line(
+                RECT.0 + i as f32,
+                RECT.1 + RECT.3 - self.simulation_time[i] * frame_scale,
+                RECT.0 + (i + 1) as f32,
+                RECT.1 + RECT.3 - self.simulation_time[i + 1] * frame_scale,
+                1.0,
+                color::LIME,
             );
         }
     }
