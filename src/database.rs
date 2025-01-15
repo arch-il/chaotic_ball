@@ -18,6 +18,9 @@ use crate::simulation::Simulation;
 const TRAIL_SIZE: usize = 50;
 const GRAPH_SIZE: usize = 300;
 
+const GAP: f32 = 3.0;
+const RECT_THICKNESS: f32 = 3.0;
+
 pub struct Database {
     kinetic_energy: [f32; GRAPH_SIZE],
     potential_energy: [f32; GRAPH_SIZE],
@@ -123,48 +126,95 @@ impl Database {
     }
 
     pub fn draw(&self) {
-        if self.energy_enabed || self.frame_time_enabled {
-            self.draw_graphs();
+        if self.info_enabled {
+            self.draw_info();
+        }
+        if self.energy_enabed {
+            self.draw_energy();
+        }
+        if self.frame_time_enabled {
+            self.draw_frame_time();
         }
         if self.trial_enabled {
             self.draw_trails();
         }
-        if self.info_enabled {
-            self.draw_info();
-        }
     }
 
-    fn draw_graphs(&self) {
-        const GAP: f32 = 3.0;
+    fn draw_energy(&self) {
+        const ID: i32 = 0;
+        const RECT: (f32, f32, f32, f32) = (
+            500.0 + GAP,
+            100.0 * ID as f32 + GAP * (ID + 1) as f32,
+            GRAPH_SIZE as f32,
+            100.0,
+        );
 
-        const ENERGY_RECT: (f32, f32, f32, f32) =
-            (500.0 + GAP, 0.0 + GAP, GRAPH_SIZE as f32, 100.0);
         draw_rectangle_lines(
-            ENERGY_RECT.0,
-            ENERGY_RECT.1,
-            ENERGY_RECT.2,
-            ENERGY_RECT.3,
-            3.0,
+            RECT.0,
+            RECT.1,
+            RECT.2,
+            RECT.3,
+            RECT_THICKNESS,
             color::PURPLE,
         );
 
-        const FRAME_TIME_RECT: (f32, f32, f32, f32) =
-            (500.0 + GAP, 100.0 + 2.0 * GAP, GRAPH_SIZE as f32, 100.0);
-        draw_rectangle_lines(
-            FRAME_TIME_RECT.0,
-            FRAME_TIME_RECT.1,
-            FRAME_TIME_RECT.2,
-            FRAME_TIME_RECT.3,
-            3.0,
-            color::LIGHTGRAY,
-        );
-
-        let index = if self.index == 0 {
+        let curr_index = if self.index == 0 {
             GRAPH_SIZE - 1
         } else {
             self.index - 1
         };
-        let energy_scale = 75.0 / self.mechanical_energy[index];
+        let energy_scale = 75.0 / self.mechanical_energy[curr_index];
+
+        for i in 0..(GRAPH_SIZE - 1) {
+            if i + 1 == self.index {
+                continue;
+            }
+
+            draw_line(
+                RECT.0 + i as f32,
+                RECT.1 + RECT.3 - self.kinetic_energy[i] * energy_scale,
+                RECT.0 + (i + 1) as f32,
+                RECT.1 + RECT.3 - self.kinetic_energy[i + 1] * energy_scale,
+                1.0,
+                color::RED,
+            );
+            draw_line(
+                RECT.0 + i as f32,
+                RECT.1 + RECT.3 - self.potential_energy[i] * energy_scale,
+                RECT.0 + (i + 1) as f32,
+                RECT.1 + RECT.3 - self.potential_energy[i + 1] * energy_scale,
+                1.0,
+                color::BLUE,
+            );
+            draw_line(
+                RECT.0 + i as f32,
+                RECT.1 + RECT.3 - self.mechanical_energy[i] * energy_scale,
+                RECT.0 + (i + 1) as f32,
+                RECT.1 + RECT.3 - self.mechanical_energy[i + 1] * energy_scale,
+                1.0,
+                color::PURPLE,
+            );
+        }
+    }
+
+    fn draw_frame_time(&self) {
+        const ID: i32 = 1;
+        const RECT: (f32, f32, f32, f32) = (
+            500.0 + GAP,
+            100.0 * ID as f32 + GAP * (ID + 1) as f32,
+            GRAPH_SIZE as f32,
+            100.0,
+        );
+
+        draw_rectangle_lines(
+            RECT.0,
+            RECT.1,
+            RECT.2,
+            RECT.3,
+            RECT_THICKNESS,
+            color::LIGHTGRAY,
+        );
+
         let frame_scale = 75.0
             / self
                 .frame_time
@@ -172,60 +222,19 @@ impl Database {
                 .max_by(|a, b| a.partial_cmp(b).unwrap())
                 .unwrap();
 
-        //? Don't know how to get display refresh rate
-        // let fps_line = 1.0 / 165.0 * frame_scale;
-        // let fps_line = FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - fps_line;
-        // draw_line(
-        //     FRAME_TIME_RECT.0,
-        //     fps_line,
-        //     FRAME_TIME_RECT.0 + FRAME_TIME_RECT.2,
-        //     fps_line,
-        //     3.0,
-        //     color::RED,
-        // );
-
         for i in 0..(GRAPH_SIZE - 1) {
             if i + 1 == self.index {
                 continue;
             }
 
-            if self.energy_enabed {
-                draw_line(
-                    ENERGY_RECT.0 + i as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.kinetic_energy[i] * energy_scale,
-                    ENERGY_RECT.0 + (i + 1) as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.kinetic_energy[i + 1] * energy_scale,
-                    1.0,
-                    color::RED,
-                );
-                draw_line(
-                    ENERGY_RECT.0 + i as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.potential_energy[i] * energy_scale,
-                    ENERGY_RECT.0 + (i + 1) as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.potential_energy[i + 1] * energy_scale,
-                    1.0,
-                    color::BLUE,
-                );
-                draw_line(
-                    ENERGY_RECT.0 + i as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.mechanical_energy[i] * energy_scale,
-                    ENERGY_RECT.0 + (i + 1) as f32,
-                    ENERGY_RECT.1 + ENERGY_RECT.3 - self.mechanical_energy[i + 1] * energy_scale,
-                    1.0,
-                    color::PURPLE,
-                );
-            }
-
-            if self.frame_time_enabled {
-                draw_line(
-                    FRAME_TIME_RECT.0 + i as f32,
-                    FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - self.frame_time[i] * frame_scale,
-                    FRAME_TIME_RECT.0 + (i + 1) as f32,
-                    FRAME_TIME_RECT.1 + FRAME_TIME_RECT.3 - self.frame_time[i + 1] * frame_scale,
-                    1.0,
-                    color::LIGHTGRAY,
-                );
-            }
+            draw_line(
+                RECT.0 + i as f32,
+                RECT.1 + RECT.3 - self.frame_time[i] * frame_scale,
+                RECT.0 + (i + 1) as f32,
+                RECT.1 + RECT.3 - self.frame_time[i + 1] * frame_scale,
+                1.0,
+                color::LIGHTGRAY,
+            );
         }
     }
 
